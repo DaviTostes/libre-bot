@@ -15,7 +15,7 @@ LibreBot is a Go CLI tool for scraping product cards from Mercado Livre's affili
 
 ## Usage
 
-Run the dev task with Taskfile:
+Run the prod task with Taskfile:
 
 ```bash
 task prod
@@ -33,7 +33,3 @@ It fetches up to 24 product cards and prints affiliate links.
 
 - google-chrome;
 - Chrome's user data directory on the root of the project;
-
-## License
-
-MIT
