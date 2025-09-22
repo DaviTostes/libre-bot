@@ -1,0 +1,12 @@
+# https://taskfile.dev
+
+version: '3'
+
+tasks:
+  dev:
+    cmds:
+      - go run ./cmd/cli/main.go
+  prod:
+    cmds:
+      - go build -ldflags="-s -w" -o bin/libre-bot ./cmd/cli/main.go  && ./bin/libre-bot
+    silent: true
