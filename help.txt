@@ -1,0 +1,14 @@
+Usage:
+
+  <action> <option>
+
+Actions:
+    
+    get
+      cards
+
+    connect
+      whatsapp
+
+    create
+      link
