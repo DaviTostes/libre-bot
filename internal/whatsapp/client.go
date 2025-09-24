@@ -45,7 +45,6 @@ func ConnectToWhatsApp() error {
 			return err
 		}
 
-		fmt.Println("connected!")
 		return nil
 	}
 
@@ -95,10 +94,6 @@ func eventHandler(evt any) {
 	case *events.Connected:
 		fmt.Println("connected!")
 	case *events.Message:
-		if v.Info.IsGroup {
-			break
-		}
-
 		sender := v.Info.Sender.String()
 
 		messageText := ""
@@ -114,6 +109,10 @@ func eventHandler(evt any) {
 		} else {
 			messageText = "[Unsupported message type]"
 		}
+
+
+		fmt.Println(sender)
+		fmt.Println(messageText)
 
 		if strings.ToLower(messageText) == "ping" {
 			SendMessage(sender, "pong")
