@@ -1,113 +1,96 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"librebot/internal/scrap"
-	"librebot/internal/whatsapp"
-	"log"
 	"os"
+	"slices"
+	"sort"
+	"strconv"
 	"strings"
+	"sync"
+	"time"
+
+	// "librebot/internal/whatsapp"
+	"log"
 )
 
-type ActionFunc func(string)
+var (
+	isLoading = false
+	mu        = sync.Mutex{}
+)
 
-var actionMap = map[string]ActionFunc{}
+func startLoading() {
+	isLoading = true
 
-func populateOptions() {
-	actionMap["connect"] = func(s string) {
-		if s == "whatsapp" {
-			if err := whatsapp.ConnectToWhatsApp(); err != nil {
-				log.Fatalln(err)
+	go func() {
+		count := 0
+		for {
+			if isLoading {
+				fmt.Print("*")
+				time.Sleep(200 * time.Millisecond)
 			}
-		} else {
-			fmt.Println("options for connect: whatsapp")
+
+			count++
+			if count == 10 {
+				fmt.Print("\r")
+				fmt.Print(strings.Repeat(" ", 80))
+				fmt.Print("\r")
+
+				count = 0
+			}
 		}
-	}
+	}()
+}
 
-	actionMap["get"] = func(s string) {
-		if s == "cards" {
-			cards, err := scrap.GetPolyCards()
-			if err != nil {
-				log.Fatalln(err)
-			}
-
-			for _, card := range cards {
-				link, err := scrap.GenerateAffiliateLink(card.Url)
-				if err != nil {
-					log.Fatalln(err)
-				}
-
-				fmt.Println(card.Text, "->", link)
-			}
-		} else {
-			fmt.Println("options for get: cards")
-		}
-	}
-
-	actionMap["create"] = func(s string) {
-		if s == "link" {
-			fmt.Print("url: ")
-			scanner := bufio.NewScanner(os.Stdin)
-			if !scanner.Scan() {
-				return
-			}
-
-			url := scanner.Text()
-			if url == "" {
-				fmt.Println("invalid url")
-				return
-			}
-
-			link, err := scrap.GenerateAffiliateLink(url)
-			if err != nil {
-				log.Fatalln(err)
-			}
-
-			fmt.Println("link:", link)
-		} else {
-			fmt.Println("options for create: link")
-		}
-	}
+func stopLoading() {
+	isLoading = false
+	fmt.Print("\r")
+	fmt.Print(strings.Repeat(" ", 80))
+	fmt.Print("\r")
+	fmt.Println("")
 }
 
 func main() {
-	populateOptions()
+	// if err := whatsapp.ConnectToWhatsApp(); err != nil {
+	// 	log.Fatalln(err)
+	// }
 
-	fmt.Println("welcome to LibreBot")
-	scanner := bufio.NewScanner(os.Stdin)
-
-	for {
-		fmt.Print("#> ")
-
-		if !scanner.Scan() {
-			break
-		}
-
-		command := scanner.Text()
-		if command == "help" {
-			file, _ := os.ReadFile("help.txt")
-			fmt.Println(string(file))
-
-			continue
-		}
-
-		splitedCmd := strings.Split(command, " ")
-		if len(splitedCmd) < 2 {
-			fmt.Println("usage: <action> <option>")
-			continue
-		}
-
-		option := actionMap[splitedCmd[0]]
-		if option == nil {
-			fmt.Println("invalid command")
-			continue
-		}
-
-		option(splitedCmd[1])
+	postInterval := os.Getenv("POST_INTERVAL")
+	postIntervalInt, err := strconv.Atoi(postInterval)
+	if err != nil {
+		log.Fatalln(err)
 	}
 
-	if err := scanner.Err(); err != nil {
-		log.Fatalln("error reading from stdin:", err.Error())
+	need := (60 / postIntervalInt) * 24
+	cards := []scrap.PolyCard{}
+
+	fmt.Println("Need:", need)
+
+	startLoading()
+
+	for {
+		newCards, err := scrap.GetPolyCards()
+		if err != nil {
+			log.Fatalln(err)
+		}
+
+		cards = append(cards, newCards...)
+
+		if len(cards) >= need {
+			break
+		}
+	}
+
+	stopLoading()
+
+	fmt.Println("Cards scrapped:", len(cards))
+	for i := range cards {
+		// link, err := scrap.GenerateAffiliateLink(cards[i].Url)
+		// if err != nil {
+		// 	continue
+		// }
+
+		fmt.Println(cards[i].Text /* , "->", link */)
 	}
 }

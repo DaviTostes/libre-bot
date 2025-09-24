@@ -1,9 +1,9 @@
-# https://taskfile.dev
-
 version: '3'
 
 env:
   DB: "db/store.db"
+  GROUP_JID: "5522992594565@s.whatsapp.net"
+  POST_INTERVAL: 30 # minutes 
   
 tasks:
   dev:
@@ -11,5 +11,5 @@ tasks:
       - go run ./cmd/cli/main.go
   prod:
     cmds:
-      - go build -ldflags="-s -w" -o bin/libre-bot ./cmd/cli/main.go  && ./bin/libre-bot
-    silent: true
+      - go build -ldflags="-s -w" -o bin/libre-bot ./cmd/cli/main.go 
+      - ./bin/libre-bot

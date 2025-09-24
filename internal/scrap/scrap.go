@@ -81,56 +81,48 @@ type PolyCard struct {
 }
 
 func GetPolyCards() ([]PolyCard, error) {
-	polyCardSelector := ".poly-card"
-
-	polyCards := []PolyCard{}
-
-	actions := []chromedp.Action{
+	tasks := chromedp.Tasks{
 		chromedp.Navigate("https://www.mercadolivre.com.br/afiliados/hub"),
-
-		chromedp.WaitVisible(polyCardSelector, chromedp.ByQueryAll),
-
-		chromedp.ScrollIntoView("footer", chromedp.ByQuery),
-		chromedp.WaitVisible("footer", chromedp.ByQuery),
-		chromedp.Sleep(1 * time.Second),
+		chromedp.WaitVisible("body", chromedp.ByQuery),
+		chromedp.WaitVisible("#recommendations_column", chromedp.ByQuery),
 	}
 
-	actions = append(actions, chromedp.ActionFunc(func(ctx context.Context) error {
-		var cardNodes []*cdp.Node
-		if err := chromedp.Nodes(polyCardSelector, &cardNodes, chromedp.ByQueryAll).Do(ctx); err != nil {
-			return err
-		}
+	polyCards := []PolyCard{}
+	polyCardSelector := ".poly-card"
 
-		for _, node := range cardNodes {
-			if len(polyCards) == 24 {
-				break
+	tasks = append(tasks, chromedp.Tasks{
+		chromedp.ActionFunc(func(ctx context.Context) error {
+			var cardNodes []*cdp.Node
+			if err := chromedp.Nodes(polyCardSelector, &cardNodes, chromedp.ByQueryAll).Do(ctx); err != nil {
+				return err
 			}
 
-			var href string
-			var text string
-			var ok bool
+			for _, node := range cardNodes {
+				var href string
+				var text string
+				var ok bool
 
-			err := chromedp.AttributeValue("a", "href", &href, &ok, chromedp.ByQuery, chromedp.FromNode(node)).
-				Do(ctx)
-			if err != nil {
-				continue
+				err := chromedp.AttributeValue("a", "href", &href, &ok, chromedp.ByQuery, chromedp.FromNode(node)).
+					Do(ctx)
+				if err != nil {
+					continue
+				}
+
+				err = chromedp.Text("a", &text, chromedp.ByQuery, chromedp.FromNode(node)).
+					Do(ctx)
+				if err != nil {
+					continue
+				}
+
+				if ok {
+					polyCards = append(polyCards, PolyCard{Url: href, Text: text})
+				}
 			}
 
-			err = chromedp.Text("a", &text, chromedp.ByQuery, chromedp.FromNode(node)).
-				Do(ctx)
-			if err != nil {
-				continue
-			}
+			return nil
+		})})
 
-			if ok {
-				polyCards = append(polyCards, PolyCard{Url: href, Text: text})
-			}
-		}
-
-		return nil
-	}))
-
-	if err := runActions(actions); err != nil {
+	if err := runActions(tasks); err != nil {
 		return nil, err
 	}
 

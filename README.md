@@ -27,8 +27,6 @@ Or directly:
 go build -o bin/libre-bot ./cmd/cli/main.go && ./bin/libre-bot
 ```
 
-It fetches up to 24 product cards and prints affiliate links.
-
 ## Dependencies
 
 - google-chrome;
